@@ -1,0 +1,32 @@
+baseURL: "https://zichangyang.github.io/"
+languageCode: "zh-cn"
+title: "Lele's Blog"
+theme: "PaperMod"
+
+params:
+  env: production
+  title: "Lele's Blog"
+  description: "记录学习、科研、工程实践和生活想法。"
+  defaultTheme: auto
+  ShowReadingTime: true
+  ShowCodeCopyButtons: true
+  ShowPostNavLinks: true
+
+  homeInfoParams:
+    Title: "Lele's Blog"
+    Content: "记录学习、科研、工程实践和一些生活想法。"
+
+  socialIcons:
+    - name: github
+      url: "https://github.com/ZichangYang"
+
+menu:
+  main:
+    - identifier: posts
+      name: 文章
+      url: /posts/
+      weight: 10
+    - identifier: tags
+      name: 标签
+      url: /tags/
+      weight: 20

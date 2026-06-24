@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Posts on Lele&#39;s Blog</title>
+    <link>http://localhost:1313/posts/</link>
+    <description>Recent content in Posts on Lele&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hello</title>
+      <link>http://localhost:1313/posts/hello/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/hello/</guid>
+      <description>&lt;p&gt;这是我的第一篇 Hugo 博客。&lt;/p&gt;
+&lt;p&gt;以后这里会记录学习、科研、工程实践和生活想法。&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
