@@ -8,7 +8,7 @@ export const themeConfig: ThemeConfig = {
     description: 'Lele 的个人博客，记录学习、科研、工程实践和生活想法。',
     i18nTitle: false,
     author: 'Lele',
-    url: 'https://zichangyang.github.io',
+    url: 'https://lele.best',
     base: '/',
     favicon: '/icons/favicon.svg',
   },
