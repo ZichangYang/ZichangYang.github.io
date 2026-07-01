@@ -9,6 +9,7 @@ tags:
   - 心得
 draft: false
 toc: true
+abbrlink: first-paper-experience
 ---
 
 ## 起因：我想不到任何 idea

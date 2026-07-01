@@ -8,6 +8,7 @@ tags:
   - Astro
 draft: false
 toc: true
+abbrlink: hello
 ---
 
 这是我的第一篇 Retypeset 博客。
