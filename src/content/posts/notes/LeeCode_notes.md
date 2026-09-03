@@ -768,3 +768,296 @@ if grumpy[i] == 1:
 
 1. 窗口里要维护什么信息，例如和、数量或者频率字典；
 2. 题目要最大值、最小值、数量，还是每个位置的结果。
+
+### 二、739. 每日温度
+
+题目：[739. 每日温度](https://leetcode.cn/problems/daily-temperatures/)
+
+#### 题目要求
+
+对于第 `i` 天，找出它右边第一个温度严格高于 `temperatures[i]` 的日期，并返回需要等待的天数。如果之后没有更高温度，答案就是 `0`。
+
+例如：
+
+```python
+temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+answer       = [ 1,  1,  4,  2,  1,  1,  0,  0]
+```
+
+这句话中的三个信号非常关键：
+
+```text
+对每一天
+右边
+第一个更高温度
+```
+
+因此，这是一道典型的“寻找右边第一个更大元素”的单调栈题。
+
+#### 暴力解法为什么慢
+
+最直接的做法是从每一天出发，继续向右寻找第一个更热的日期。
+
+```python
+for i in range(n):
+    for j in range(i + 1, n):
+        if temperatures[j] > temperatures[i]:
+            answer[i] = j - i
+            break
+```
+
+如果温度一直下降，内层循环会反复扫描后面的元素，最坏时间复杂度是 `O(n²)`。
+
+单调栈的优化点是：不让每个旧元素主动向后搜索，而是在新元素到来时，一次性解决所有能被它解决的旧元素。
+
+#### 栈中保存什么
+
+栈中保存尚未找到更高温度的日期下标：
+
+```python
+stack = []  # 尚未找到更高温度的日期下标
+```
+
+这里不能只保存温度，因为答案要求的是等待天数：
+
+```python
+等待天数 = 当前日期下标 - 旧日期下标
+```
+
+保存下标后，可以同时取得温度和距离：
+
+```python
+previous_index = stack[-1]
+previous_temperature = temperatures[previous_index]
+distance = current_index - previous_index
+```
+
+#### 栈内不变量
+
+从栈底到栈顶，对应的温度保持单调不升，也可以称为单调递减栈（这里允许相等）：
+
+```text
+temperatures[stack[0]] >= temperatures[stack[1]] >= ... >= temperatures[stack[-1]]
+```
+
+原因是：当新温度严格高于栈顶温度时，栈顶已经找到答案，会立刻被弹出；只有无法被当前温度解决的日期才会继续留在栈里。
+
+#### 标准处理流程
+
+遍历到第 `i` 天时：
+
+1. 如果栈不为空，并且当前温度比栈顶日期的温度高，说明第 `i` 天就是栈顶日期右边第一个更热的日期；
+2. 弹出栈顶下标 `previous_index`；
+3. 记录 `answer[previous_index] = i - previous_index`；
+4. 继续比较新的栈顶，因为当前温度可能同时解决多个日期；
+5. 当前日期处理完以后，将下标 `i` 入栈，等待未来更高的温度。
+
+对应的核心代码只有两部分：
+
+```python
+while stack and temperatures[i] > temperatures[stack[-1]]:
+    previous_index = stack.pop()
+    answer[previous_index] = i - previous_index
+
+stack.append(i)
+```
+
+#### 示例推演
+
+以开头的 `[73, 74, 75, 71, 69, 72, 76, 73]` 为例：
+
+| 当前日期 `i` | 当前温度 | 发生的操作                 | 栈中剩余下标 | 已确定的答案                     |
+| ------------ | -------: | -------------------------- | ------------ | -------------------------------- |
+| 0            |       73 | 无人可比较，`0` 入栈       | `[0]`        | 暂无                             |
+| 1            |       74 | `74 > 73`，弹出 `0`        | `[1]`        | `answer[0] = 1`                  |
+| 2            |       75 | `75 > 74`，弹出 `1`        | `[2]`        | `answer[1] = 1`                  |
+| 3            |       71 | `71` 不高于 `75`，直接入栈 | `[2, 3]`     | 暂无新增                         |
+| 4            |       69 | `69` 不高于 `71`，直接入栈 | `[2, 3, 4]`  | 暂无新增                         |
+| 5            |       72 | 依次弹出 `4` 和 `3`        | `[2, 5]`     | `answer[4] = 1`，`answer[3] = 2` |
+| 6            |       76 | 依次弹出 `5` 和 `2`        | `[6]`        | `answer[5] = 1`，`answer[2] = 4` |
+| 7            |       73 | `73` 不高于 `76`，直接入栈 | `[6, 7]`     | 暂无新增                         |
+
+遍历结束后，栈里剩下的下标 `6、7` 都没有在右边遇到更高温度，所以它们的答案保持初始值 `0`。
+
+#### 代码
+
+```python
+class Solution:
+    def dailyTemperatures(self, temperatures: List[int]) -> List[int]:
+        n = len(temperatures)
+        answer = [0] * n
+        stack = []
+
+        for current_index in range(n):
+            while (
+                stack
+                and temperatures[current_index] > temperatures[stack[-1]]
+            ):
+                previous_index = stack.pop()
+                answer[previous_index] = current_index - previous_index
+
+            stack.append(current_index)
+
+        return answer
+```
+
+也可以把当前温度保存到变量中，使判断更短：
+
+```python
+class Solution:
+    def dailyTemperatures(self, temperatures: List[int]) -> List[int]:
+        answer = [0] * len(temperatures)
+        stack = []
+
+        for i, current_temperature in enumerate(temperatures):
+            while stack and current_temperature > temperatures[stack[-1]]:
+                previous_index = stack.pop()
+                answer[previous_index] = i - previous_index
+
+            stack.append(i)
+
+        return answer
+```
+
+#### 为什么这里必须使用 `while`
+
+一个新温度可能比前面连续多个尚未解决的温度都高。
+
+例如：
+
+```python
+temperatures = [75, 71, 69, 72]
+```
+
+遇到 `72` 时：
+
+```text
+72 > 69，解决温度 69 对应的日期
+72 > 71，继续解决温度 71 对应的日期
+72 < 75，停止弹栈
+```
+
+如果使用 `if`，只能弹出 `69`，就会漏掉 `71`。因此必须一直弹到当前温度不能解决栈顶为止。
+
+#### 为什么条件是 `>` 而不是 `>=`
+
+题目要求未来出现**更高**的温度，相等不算。
+
+例如：
+
+```python
+temperatures = [73, 73, 74]
+```
+
+第二天的 `73` 不能作为第一天的答案。两个 `73` 都应该继续留在栈中，直到遇到 `74` 后再依次弹出：
+
+```python
+answer = [2, 1, 0]
+```
+
+所以弹栈条件必须是：
+
+```python
+current_temperature > temperatures[stack[-1]]
+```
+
+#### 为什么弹栈时遇到的一定是“第一个”更高温度
+
+栈中下标一直没有被弹出，说明从它入栈以后到当前日期之前，没有出现过更高温度；否则它早就已经被弹出了。
+
+当当前温度第一次满足条件时，当前日期自然就是它右边第一个更高温度的日期。这正是正序遍历和“满足条件立即弹栈”共同保证的。
+
+#### 复杂度
+
+- 时间复杂度：`O(n)`；
+- 空间复杂度：`O(n)`。
+
+代码虽然有一层 `for` 和一层 `while`，但并不是 `O(n²)`。每个下标只会入栈一次，并且最多出栈一次，所以全部弹栈操作加起来最多执行 `n` 次。
+
+#### 截图中写法的评价与简化
+
+截图中的代码思路是正确的：栈里保存下标，遇到更高温度时弹栈并填写距离。
+
+原来的结构大致是：
+
+```python
+while stack != []:
+    if current_temperature > temperatures[stack[-1]]:
+        # 弹栈并记录答案
+    else:
+        break
+```
+
+可以直接把 `if` 的条件合并到 `while` 中：
+
+```python
+while stack and current_temperature > temperatures[stack[-1]]:
+    previous_index = stack.pop()
+    answer[previous_index] = i - previous_index
+```
+
+这样省去了 `else: break`，也更接近单调栈的通用模板。`stack` 本身就可以用来判断是否为空，不需要写成 `stack != []`。
+
+#### 易错点
+
+1. **栈里存了温度，而不是下标**
+
+   这会导致无法计算等待天数，也不知道应该把答案写到哪个位置。
+
+2. **只弹出一次，没有连续弹栈**
+
+   一个较高温度可能解决多个旧日期，所以必须使用 `while`。
+
+3. **把严格更高写成大于等于**
+
+   相同温度不符合题意，弹栈条件只能使用 `>`。
+
+4. **把答案写在当前下标**
+
+   当前日期是来帮助旧日期确定答案的，答案应该写回刚弹出的下标：
+
+   ```python
+   previous_index = stack.pop()
+   answer[previous_index] = current_index - previous_index
+   ```
+
+5. **遍历结束后再次处理栈中元素**
+
+   剩余元素的右边不存在更高温度。因为答案数组已经初始化为全 `0`，无需额外处理。
+
+6. **看到双层循环就误判成 `O(n²)`**
+
+   判断复杂度时要看每个元素被操作多少次。本题每个下标最多入栈、出栈各一次，所以总时间仍是 `O(n)`。
+
+#### 本题模板
+
+这类“寻找右边第一个更大元素，并计算距离”的题可以直接套用下面的骨架：
+
+```python
+answer = [0] * len(nums)
+stack = []  # 保存还没有找到答案的下标
+
+for i in range(len(nums)):
+    while stack and nums[i] > nums[stack[-1]]:
+        previous_index = stack.pop()
+        answer[previous_index] = i - previous_index
+
+    stack.append(i)
+```
+
+真正需要根据题意修改的通常只有两处：
+
+```text
+弹栈条件：找更大还是找更小，严格还是允许相等
+记录内容：记录元素值、下标，还是下标之间的距离
+```
+
+#### 一句话总结
+
+```text
+栈中保存还没等到更高温度的日期；
+新温度到来时，连续解决所有比它低的栈顶日期；
+弹出谁，就把距离写到谁的答案中；
+最后再把当前日期入栈，等待未来处理。
+```
+
