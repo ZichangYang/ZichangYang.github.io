@@ -26,9 +26,11 @@ abbrlink: 'leecode'
   - [7. 1423. 可获得的最大点数](#7-1423-可获得的最大点数)
   - [8. 1052. 爱生气的书店老板](#8-1052-爱生气的书店老板)
   - [三、八道题横向对比](#三八道题横向对比)
+  - [四、定长滑动窗口模板](#四定长滑动窗口模板)
 - [栈](#栈)
   - [一、单调栈的核心套路](#一单调栈的核心套路)
   - [二、739. 每日温度](#二739-每日温度)
+  - [三、单调栈模板](#三单调栈模板)
 - [二叉树](#二叉树)
   - [一、先理解二叉树和递归](#一先理解二叉树和递归)
   - [二、144. 二叉树的前序遍历](#二144-二叉树的前序遍历)
@@ -38,23 +40,26 @@ abbrlink: 'leecode'
   - [六、98. 验证二叉搜索树](#六98-验证二叉搜索树)
   - [七、105. 从前序与中序遍历序列构造二叉树](#七105-从前序与中序遍历序列构造二叉树)
   - [八、六道题放在一起看](#八六道题放在一起看)
+  - [九、二叉树递归与遍历模板](#九二叉树递归与遍历模板)
 - [回溯](#回溯)
   - [一、77. 组合：逐行理解回溯](#一77-组合逐行理解回溯)
-  - [二、回溯复习：先决定搜索树长什么样](#二回溯复习先决定搜索树长什么样)
-  - [三、46. 全排列：用 used 记录当前路径用过谁](#三46-全排列用-used-记录当前路径用过谁)
+  - [二、回溯的基本框架：状态、选择与恢复](#二回溯的基本框架状态选择与恢复)
+  - [三、46. 全排列：通过 used 维护路径中的使用状态](#三46-全排列通过-used-维护路径中的使用状态)
   - [四、78. 子集：每个搜索节点都是答案](#四78-子集每个搜索节点都是答案)
   - [五、39. 组合总和：可以重复选，所以递归传 i](#五39-组合总和可以重复选所以递归传-i)
   - [六、40. 组合总和 II：同层去重，同路允许相等值](#六40-组合总和-ii同层去重同路允许相等值)
   - [七、131. 分割回文串：枚举下一刀切在哪里](#七131-分割回文串枚举下一刀切在哪里)
   - [八、79. 单词搜索：格子只在当前路径中占用](#八79-单词搜索格子只在当前路径中占用)
-  - [九、回溯套路对照表](#九回溯套路对照表)
+  - [九、回溯题型的统一框架与差异](#九回溯题型的统一框架与差异)
+  - [十、回溯算法模板](#十回溯算法模板)
 - [图论搜索](#图论搜索)
-  - [一、从回溯走到网格 DFS 和 BFS](#一从回溯走到网格-dfs-和-bfs)
+  - [一、网格图建模与搜索方法](#一网格图建模与搜索方法)
   - [二、200. 岛屿数量：发现一次新陆地，处理整块陆地](#二200-岛屿数量发现一次新陆地处理整块陆地)
   - [三、130. 被围绕的区域：从边界保护不能翻转的 O](#三130-被围绕的区域从边界保护不能翻转的-o)
   - [四、994. 腐烂的橘子：多源 BFS 同时扩散](#四994-腐烂的橘子多源-bfs-同时扩散)
   - [五、1091. 二进制矩阵中的最短路径：BFS 第一次到达就是最短](#五1091-二进制矩阵中的最短路径bfs-第一次到达就是最短)
-  - [六、图论搜索复习套路与自测](#六图论搜索复习套路与自测)
+  - [六、网格搜索的通用套路与题型对比](#六网格搜索的通用套路与题型对比)
+  - [七、图与网格搜索模板](#七图与网格搜索模板)
 
 ---
 
@@ -815,6 +820,68 @@ if grumpy[i] == 1:
 1. 窗口里要维护什么信息，例如和、数量或者频率字典；
 2. 题目要最大值、最小值、数量，还是每个位置的结果。
 
+### 四、定长滑动窗口模板
+
+#### 窗口和：移除旧贡献，加入新贡献
+
+适用于长度固定的连续区间。下面返回所有长度为 k 的窗口和，要求 1 ≤ k ≤ 数组长度。求最大值、计数或填写指定位置时，只需改变记录答案的方式。
+
+```python
+def fixed_window_sums(nums, k):
+    window_sum = sum(nums[:k])
+    result = [window_sum]
+    for right in range(k, len(nums)):
+        window_sum -= nums[right - k]
+        window_sum += nums[right]
+        result.append(window_sum)
+    return result
+```
+
+若仅求最大窗口和，可将 result 改为 best = window_sum，并在循环中执行 best = max(best, window_sum)，辅助空间可降为 O(1)。初始答案取第一扇窗口的值，避免全负数输入时出错。
+
+#### 条件计数：把元素转换成贡献
+
+元音、白块、原本不满意的顾客等，都可以表示为每个元素对窗口的贡献。contribution 是接收一个元素并返回数值的函数，以下模板返回最大窗口贡献。
+
+```python
+def max_window_contribution(items, k, contribution):
+    current = sum(contribution(items[i]) for i in range(k))
+    best = current
+    for right in range(k, len(items)):
+        current -= contribution(items[right - k])
+        current += contribution(items[right])
+        best = max(best, current)
+    return best
+```
+
+元音计数的贡献可写为 lambda ch: int(ch in 'aeiou')；求最少白块时把 max 改为 min。贡献函数应只依赖当前元素，并在整个滑动过程中保持一致。
+
+#### 频率字典：同时维护窗口和与种类数
+
+```python
+def max_sum_with_distinct(nums, k, min_distinct):
+    freq = {}
+    current = 0
+    best = None
+    for right, value in enumerate(nums):
+        current += value
+        freq[value] = freq.get(value, 0) + 1
+        if right >= k:
+            outgoing = nums[right - k]
+            current -= outgoing
+            freq[outgoing] -= 1
+            if freq[outgoing] == 0:
+                del freq[outgoing]
+        if right >= k - 1 and len(freq) >= min_distinct:
+            best = current if best is None else max(best, current)
+    return best
+```
+
+这里 None 表示不存在合法窗口，调用方按题目要求转换成 0 或其他值。零频键必须删除，否则 len(freq) 不能代表当前种类数。该模板同样要求窗口长度合法。
+
+半径题先转换窗口长度 k → 2k + 1；两端取牌先转换为中间留下长度 n - k 的窗口；固定收益题先分离基础收益，再用窗口处理额外收益。转换的是状态定义，滑动时的增减逻辑不变。
+
+
 ---
 
 ## 栈
@@ -1177,6 +1244,53 @@ for i in range(len(nums)):
 弹出谁，就把距离写到谁的答案中；
 最后再把当前日期入栈，等待未来处理。
 ```
+
+### 三、单调栈模板
+
+#### 右侧第一个严格更大元素
+
+栈保存尚未确定答案的下标。当前元素能够解决栈顶时，弹出栈顶并记录答案，直到无法继续解决为止。
+
+```python
+def next_greater_indices(nums):
+    answer = [-1] * len(nums)
+    stack = []
+    for i, value in enumerate(nums):
+        while stack and value > nums[stack[-1]]:
+            previous = stack.pop()
+            answer[previous] = i
+        stack.append(i)
+    return answer
+```
+
+答案为目标下标，-1 表示不存在。每日温度把记录语句改为 answer[previous] = i - previous，并把初值改为 0；求目标值则记录 nums[i]。
+
+#### 左侧第一个严格更大元素
+
+从左往右维护候选下标。当前元素之前不大于自己的候选都应移除，剩下的栈顶才是左侧最近且严格更大的元素。
+
+```python
+def previous_greater_indices(nums):
+    answer = [-1] * len(nums)
+    stack = []
+    for i, value in enumerate(nums):
+        while stack and nums[stack[-1]] <= value:
+            stack.pop()
+        if stack:
+            answer[i] = stack[-1]
+        stack.append(i)
+    return answer
+```
+
+| 查找目标 | 右侧模板的弹栈条件 | 左侧模板的弹栈条件 |
+| --- | --- | --- |
+| 严格更大 | current > top | top <= current |
+| 严格更小 | current < top | top >= current |
+| 大于等于 | current >= top | top < current |
+| 小于等于 | current <= top | top > current |
+
+两个模板的栈含义不同：右侧模板在弹栈时解决旧元素的答案；左侧模板先排除无效候选，再为当前元素记录答案。每个下标至多入栈、出栈各一次，时间 O(n)，空间 O(n)。
+
 
 ---
 
@@ -1706,16 +1820,140 @@ class Solution:
 4. 左右子树已经给出结果后，当前这一层怎么完成任务？
 ```
 
-#### 复习时先口头回答这几个问题
+#### 六道题的核心区别
 
-1. **144：为什么先记录根？** 因为题目要求前序，顺序是根、左、右。
-2. **104：为什么取 `max` 而不是相加？** 一条向下的路径只能选择一侧。
-3. **236：为什么一侧非空时返回子树结果？** 当前节点还没有提供新的汇合点，答案或目标线索应该继续向上传。
-4. **102：为什么先保存队列长度？** 避免把新加入的下一层节点算进当前层。
-5. **98：为什么需要上下界？** 节点还要遵守更远祖先的大小限制。
-6. **105：为什么需要中序数组？** 它告诉我们根的左右分别有哪些节点，从而确定前序的拆分位置。
+| 题目 | 核心依据 | 对应实现 |
+| --- | --- | --- |
+| 144 前序遍历 | 当前节点在左右子树之前处理 | 先记录根，再递归 |
+| 104 最大深度 | 一条向下路径只能进入一侧子树 | 左右深度取最大值再加一 |
+| 236 最近公共祖先 | 两侧分别返回目标时，当前节点构成汇合点 | 双侧非空返回当前节点，单侧非空传递结果 |
+| 102 层序遍历 | 同层节点需要统一处理 | 每轮先固定队列长度 |
+| 98 验证 BST | 节点必须满足所有祖先施加的大小约束 | 向下传递并收紧上下界 |
+| 105 构造二叉树 | 前序确定根，中序确定左右子树范围 | 按左子树节点数划分前序区间 |
 
-建议复习顺序是 `144 → 104 → 102 → 98 → 236 → 105`。先用三五个节点的小树手算，再遮住代码，根据函数定义重写；如果卡住，优先检查自己是否说清楚了“这一层到底返回什么”。
+### 九、二叉树递归与遍历模板
+
+#### 深度优先遍历：处理位置决定遍历顺序
+
+```python
+def traversal(root, order='pre'):
+    result = []
+    def dfs(node):
+        if node is None:
+            return
+        if order == 'pre':
+            result.append(node.val)
+        dfs(node.left)
+        if order == 'in':
+            result.append(node.val)
+        dfs(node.right)
+        if order == 'post':
+            result.append(node.val)
+    dfs(root)
+    return result
+```
+
+order 取 pre、in、post，分别对应前序、中序、后序。遍历类问题的核心是安排当前节点的处理时机。
+
+#### 自底向上：先求子树结果，再合并
+
+以下为高阶模板：empty_value 是空子树结果，merge(node, left, right) 根据当前节点和左右结果构造返回值。这里的空值适用于整数、布尔值、None 等不可变结果。
+
+```python
+def tree_fold(root, empty_value, merge):
+    if root is None:
+        return empty_value
+    left = tree_fold(root.left, empty_value, merge)
+    right = tree_fold(root.right, empty_value, merge)
+    return merge(root, left, right)
+
+
+def tree_depth(root):
+    return tree_fold(root, 0, lambda node, left, right: max(left, right) + 1)
+
+
+def node_count(root):
+    return tree_fold(root, 0, lambda node, left, right: left + right + 1)
+```
+
+最大深度与节点数量只改变空树值和合并规则。最近公共祖先还需要在命中目标时提前返回，采用下面的专用结构。
+
+```python
+def lowest_common_ancestor(root, p, q):
+    if root is None or root is p or root is q:
+        return root
+    left = lowest_common_ancestor(root.left, p, q)
+    right = lowest_common_ancestor(root.right, p, q)
+    if left is not None and right is not None:
+        return root
+    return left if left is not None else right
+```
+
+该模板要求两个目标节点都存在。返回结果既可能是单个目标，也可能是已经确定的公共祖先，不能把所有非空返回值都解释成“两个目标均已找到”。
+
+#### 自顶向下：把祖先约束传给子树
+
+```python
+def is_valid_bst(root):
+    def dfs(node, lower, upper):
+        if node is None:
+            return True
+        if not lower < node.val < upper:
+            return False
+        return (dfs(node.left, lower, node.val)
+                and dfs(node.right, node.val, upper))
+    return dfs(root, float('-inf'), float('inf'))
+```
+
+当前节点继承所有祖先的限制，再向孩子传递更严格的边界。路径和、路径深度等问题也可向下传状态，但参数含义与更新规则需要按题意重新定义。
+
+#### 层序遍历：固定本层数量
+
+```python
+from collections import deque
+
+
+def level_order(root):
+    if root is None:
+        return []
+    queue = deque([root])
+    result = []
+    while queue:
+        level = []
+        for _ in range(len(queue)):
+            node = queue.popleft()
+            level.append(node.val)
+            if node.left is not None:
+                queue.append(node.left)
+            if node.right is not None:
+                queue.append(node.right)
+        result.append(level)
+    return result
+```
+
+range(len(queue)) 在本轮 for 开始前计算，后来加入的孩子不会改变本轮处理数量。每层最大值、每层和等题目，只需改变 level 的统计方式。
+
+#### 分治构造：确定根，划分区间，连接子树
+
+下面要求前序、中序对应同一棵树，节点值互不重复。make_node(value) 是创建节点的函数，例如力扣提供的 TreeNode。
+
+```python
+def build_from_preorder_inorder(preorder, inorder, make_node):
+    position = {value: i for i, value in enumerate(inorder)}
+    def build(pre_left, in_left, in_right):
+        if in_left >= in_right:
+            return None
+        value = preorder[pre_left]
+        mid = position[value]
+        left_size = mid - in_left
+        node = make_node(value)
+        node.left = build(pre_left + 1, in_left, mid)
+        node.right = build(pre_left + 1 + left_size, mid + 1, in_right)
+        return node
+    return build(0, 0, len(inorder))
+```
+
+中序区间统一采用左闭右开形式。右子树前序起点需要跳过当前根及整个左子树；其他遍历组合的根位置、区间划分方式不同，不能直接照搬下标公式。
 
 
 ---
@@ -1990,18 +2228,20 @@ pop 负责从递归回来后撤销当前选择。
 
 ---
 
-### 二、回溯复习：先决定搜索树长什么样
+### 二、回溯的基本框架：状态、选择与恢复
 
-本次补充对应课程第 32～41 节，接在前面的 77 组合题之后。根据课程目录和作者配套代码整理；变量名与示例为便于复习重新编写，不是视频逐字稿。
+回溯将候选解组织成一棵搜索树：每个节点表示已经做出的选择，每条边表示一次新的选择。从当前节点向下搜索时扩展状态，返回时恢复状态，使不同分支能够独立展开。组合、排列、子集和字符串分割的区别，主要体现在候选范围、答案收集条件和去重规则上。
 
 来源：[第 41 节课程](https://www.bilibili.com/video/BV1GdTj6sEJS)、[作者配套代码](https://github.com/jusway/Leetcode_learn)。
 
-写回溯前先回答四个问题：
+回溯函数通常由四部分构成：
 
-1. path 已经选了什么？
-2. 这一层还能选谁？
-3. 什么时候保存答案？
-4. 返回上一层时，需要恢复哪些状态？
+| 组成部分 | 含义 | 常见实现 |
+| --- | --- | --- |
+| 当前状态 | 已经完成的部分选择 | `path`、剩余目标值、字符串下标 |
+| 候选范围 | 当前节点允许扩展的分支 | `start_index`、`used`、相邻格子 |
+| 收集与终止条件 | 何时形成答案，何时停止扩展 | 长度达到要求、剩余值归零、输入处理完毕 |
+| 状态恢复 | 消除当前分支对其他分支的影响 | 弹出路径末尾元素、恢复访问标记 |
 
 ```text
 判断是否收集答案 / 是否终止
@@ -2012,17 +2252,17 @@ pop 负责从递归回来后撤销当前选择。
     撤销选择
 ```
 
-**下一层从哪里开始，取决于元素能否重复使用，以及顺序是否重要。不要看到回溯就机械地传 i + 1。**
+**下一层的候选范围由题目约束决定：组合通过下标限制消除顺序重复，排列通过访问标记限制同一路径中的重复使用。**
 
-### 三、46. 全排列：用 used 记录当前路径用过谁
+### 三、46. 全排列：通过 used 维护路径中的使用状态
 
-#### 题目要求与识别信号
+#### 题目要求
 
 输入没有重复元素的数组，返回所有排列。[1, 2] 和 [2, 1] 是两种不同答案。题目强调顺序，就不能像组合那样只向后选。
 
 #### 思考过程
 
-每个位置都可以选任何尚未使用的下标。used[i] 表示这个元素已经在**当前排列**中使用，不能再选；回到上一层时必须恢复为 False。
+每个位置都可以选任何尚未使用的下标。`used[i]` 表示这个元素已经在**当前排列**中使用，不能再选；回到上一层时必须恢复为 `False`。
 
 ```python
 class Solution:
@@ -2054,7 +2294,7 @@ class Solution:
 [] → [2] → [2, 1]：保存
 ```
 
-选完 2 后仍需允许选择它前面的 1，所以每层从下标 0 开始。used 不是永久封禁某个元素，而是限制同一条路径内重复使用。这里恢复两样东西：path 和 used。
+选完 2 后仍需允许选择它前面的 1，所以每层从下标 0 开始。`used` 只记录当前路径的使用状态，不同排列分支之间可以再次使用同一元素。因此返回上一层时，需要同时恢复 `path` 和 `used`。
 
 时间 O(n × n!)，因为有 n! 个答案，每个复制 n 个元素；辅助空间 O(n)，不含输出。
 
@@ -2062,7 +2302,7 @@ class Solution:
 
 #### 思考过程
 
-77 只收集长度为 k 的组合；子集要求所有长度，包括空集。因此每次进入递归就保存 path，保存之后还要继续探索。
+77 只收集长度为 k 的组合；子集要求所有长度，包括空集。因此每次进入递归就保存 `path`，保存之后还要继续探索。
 
 ```python
 class Solution:
@@ -2080,15 +2320,15 @@ class Solution:
         return result
 ```
 
-对于 [1, 2]，依次收集 []、[1]、[1, 2]、[2]。start_index 防止再生成 [2, 1]。不能在保存后立即 return，否则第一次保存空集就结束了。循环没有候选项时自然返回。
+对于 [1, 2]，依次收集 []、[1]、[1, 2]、[2]。`start_index` 防止再生成 [2, 1]。不能在保存后立即 `return`，否则第一次保存空集就结束了。循环没有候选项时自然返回。
 
-复习口诀：**组合在指定长度收集，子集在每个节点收集。** 时间 O(n × 2^n)，辅助空间 O(n)，不含输出。这里沿用原题数组元素互不相同的前提。
+两题的收集位置不同：**组合在路径达到指定长度时收集，子集在搜索树的每个节点收集。** 时间 O(n × 2^n)，辅助空间 O(n)，不含输出。这里沿用原题数组元素互不相同的前提。
 
 ### 五、39. 组合总和：可以重复选，所以递归传 i
 
 #### 题目要求与推导
 
-候选数互不相同且都是正整数，每个数可以重复选择，找出和为 target 的组合。remaining 表示还差多少：选了 x，下一层就还差 remaining - x。
+候选数互不相同且都是正整数，每个数可以重复选择，找出和为 `target` 的组合。`remaining` 表示还差多少：选了 x，下一层就还差 `remaining` - x。
 
 因为允许重复使用当前数字，下一层从 i 开始；又因为是组合，只向后考虑，不回头生成不同顺序的同一答案。
 
@@ -2115,13 +2355,13 @@ class Solution:
 
 #### 示例与剪枝依据
 
-candidates = [2, 3, 6, 7]、target = 7：沿 2 → 2 → 3 得到一个答案，直接选 7 得到另一个。
+`candidates` = [2, 3, 6, 7]、`target` = 7：沿 2 → 2 → 3 得到一个答案，直接选 7 得到另一个。
 
-排序后当前数字如果大于剩余值，后面的数字只会更大，因此可以 break，结束当前层循环。没排序就不能这样 break，因为后面可能还有更小的数。
+排序后当前数字如果大于剩余值，后面的数字只会更大，因此可以 `break`，结束当前层循环。没排序就不能这样 `break`，因为后面可能还有更小的数。
 
-所有数为正保证剩余值不断减少，搜索能终止。若允许 0，不断重复选 0 就无法推进。这是套路的适用前提。
+所有数为正保证剩余值不断减少，搜索能终止。若允许 0，不断重复选 0 就无法推进。因此，候选数为正是该递归与剪枝成立的前提。
 
-设最小数为 a，D = target // a，候选数数量为 m，递归深度最多 D。时间取决于搜索树规模，呈指数增长；用 O((D + 1)(m + 1)^D) 可作宽松上界。辅助空间 O(m + D)，不含输出。
+设最小数为 a，D = `target` // a，候选数数量为 m，递归深度最多 D。时间取决于搜索树规模，呈指数增长；用 O((D + 1)(m + 1)^D) 可作宽松上界。辅助空间 O(m + D)，不含输出。
 
 ### 六、40. 组合总和 II：同层去重，同路允许相等值
 
@@ -2129,7 +2369,7 @@ candidates = [2, 3, 6, 7]、target = 7：沿 2 → 2 → 3 得到一个答案，
 
 数组可能有重复值，但每个位置只能选一次。需要同时处理：
 
-- 同一个位置不能重复选：递归传 i + 1。
+- 同一个位置不能重复选：递归传 `i + 1`。
 - 不同位置的相同值不能产生重复答案：排序后，同一层跳过重复值。
 
 ```python
@@ -2164,7 +2404,7 @@ class Solution:
 同一路径：选完 1a，再选 1b，是合法答案 [1, 1]，必须允许。
 ```
 
-进入下一层时，i == start_index 的第一个候选不跳过。若写成 i > 0，第二个 1 会被错误挡掉，漏掉 [1, 1]。
+进入下一层时，`i == start_index` 的第一个候选不跳过。若写成 i > 0，第二个 1 会被错误挡掉，漏掉 [1, 1]。
 
 **去重限制的是同一层的相同选择，不是禁止答案出现相同的数。** 时间宽松上界 O(n × 2^n)，辅助空间 O(n)，不含输出。
 
@@ -2172,7 +2412,7 @@ class Solution:
 
 #### 思考过程
 
-一次选择是一段连续子串。start_index 表示尚未分割部分的起点，循环枚举这一段的终点 end。只有这一段是回文，才能加入 path；下一段从 end + 1 开始。
+一次选择是一段连续子串。`start_index` 表示尚未分割部分的起点，循环枚举这一段的终点 `end`。只有这一段是回文，才能加入 `path`；下一段从 `end + 1` 开始。
 
 ```python
 class Solution:
@@ -2197,15 +2437,15 @@ class Solution:
 
 对于 aab，答案为 [["a", "a", "b"], ["aa", "b"]]。选了 aa 后直接从下标 2 继续，不能又从第二个 a 开始。
 
-回文指正读反读相同。切片的 end + 1 用于包含终点。必须等整串用完才保存，单独选到一个回文片段并不表示分割完成。考虑切片、回文检查和结果构造，最坏时间 O(n × 2^n)，辅助空间 O(n)，不含输出。
+回文指正读反读相同。切片的 `end + 1` 用于包含终点。必须等整串用完才保存，单独选到一个回文片段并不表示分割完成。考虑切片、回文检查和结果构造，最坏时间 O(n × 2^n)，辅助空间 O(n)，不含输出。
 
 ### 八、79. 单词搜索：格子只在当前路径中占用
 
 #### 思考过程
 
-从每个格子尝试作为起点，向上下左右寻找单词。定义 dfs(r, c, index)：尝试用格子 (r, c) 匹配 word[index]，并判断剩余字母能否接上。
+从每个格子尝试作为起点，向上下左右寻找单词。定义 dfs(r, c, index)：尝试用格子 (r, c) 匹配 `word[index]`，并判断剩余字母能否接上。
 
-格子不能在同一条路径内重复使用，但其他尝试仍然可以使用。因此临时改成占位符，搜索结束后恢复，作用与排列题的 used 相同。
+格子不能在同一条路径内重复使用，但其他尝试仍然可以使用。因此临时改成占位符，搜索结束后恢复，作用与排列题的 `used` 相同。
 
 ```python
 class Solution:
@@ -2244,30 +2484,165 @@ class Solution:
 
 board = [["A", "B"]] 可以找到 AB，不能找到 ABA，因为最后一步不能回头重复使用起点。即使找到答案，也先恢复占用的格子再返回，避免给调用者留下被修改的棋盘。
 
-可选剪枝：单词长度超过格子数直接失败；用 Counter 统计字母，如果棋盘某字母数量少于单词需求，也直接失败。但数量足够不代表位置能连起来，仍要搜索。
+可选剪枝：单词长度超过格子数直接失败；用 `Counter` 统计字母，如果棋盘某字母数量少于单词需求，也直接失败。但数量足够不代表位置能连起来，仍要搜索。
 
 设单词长 L，宽松时间上界 O(rows × cols × 4^L)，实际非首步最多有三个新方向；递归辅助空间 O(min(L, rows × cols))。
 
-### 九、回溯套路对照表
+### 九、回溯题型的统一框架与差异
 
 | 题目 | 当前选择 | 下一层候选范围 | 收集答案的条件 | 撤销什么 |
 | --- | --- | --- | --- | --- |
-| 77 组合 | 一个数 | i + 1 开始 | 长度等于 k | path |
-| 46 排列 | 一个未使用的数 | 每次从 0 开始，跳过 used | 长度等于 n | path 和 used |
-| 78 子集 | 一个数 | i + 1 开始 | 每次进入递归 | path |
-| 39 组合总和 | 一个可重复使用的数 | i 开始 | 剩余值为 0 | path |
-| 40 组合总和 II | 一个数，同层去重 | i + 1 开始 | 剩余值为 0 | path |
-| 131 分割回文串 | 一段回文子串 | end + 1 开始 | 整串已分完 | path |
+| 77 组合 | 一个数 | `i + 1` 开始 | 长度等于 k | `path` |
+| 46 排列 | 一个未使用的数 | 每次从 0 开始，跳过 `used` | 长度等于 n | `path` 和 `used` |
+| 78 子集 | 一个数 | `i + 1` 开始 | 每次进入递归 | `path` |
+| 39 组合总和 | 一个可重复使用的数 | i 开始 | 剩余值为 0 | `path` |
+| 40 组合总和 II | 一个数，同层去重 | `i + 1` 开始 | 剩余值为 0 | `path` |
+| 131 分割回文串 | 一段回文子串 | `end + 1` 开始 | 整串已分完 | `path` |
 | 79 单词搜索 | 一个相邻格子 | 四个方向 | 最后一个字母匹配成功 | 格子的临时占用标记 |
 
-remaining - nums[i]、index + 1 作为参数传入新调用，不需要手动加回去；共享列表和棋盘的原地修改才需要恢复。不要把所有变量都机械地“撤销一次”。
+`remaining - nums[i]`、`index + 1` 作为参数传入新调用，不需要手动加回去；共享列表和棋盘的原地修改才需要恢复。是否需要恢复，取决于操作是否修改了调用之间共享的状态。
+
+### 十、回溯算法模板
+
+#### 组合与子集：递增下标限定候选范围
+
+下面假设 nums 中没有重复值。k 为整数时返回固定长度组合；k 为 None 时返回全部子集。
+
+```python
+def choose_subsets(nums, k=None):
+    result, path = [], []
+    def dfs(start):
+        if k is None:
+            result.append(path[:])
+        elif len(path) == k:
+            result.append(path[:])
+            return
+        if k is not None and len(path) + len(nums) - start < k:
+            return
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            dfs(i + 1)
+            path.pop()
+    dfs(0)
+    return result
+```
+
+剪枝条件表示“已选数量加上全部剩余数量仍然不足 k”。子集在每个节点保存，固定长度组合只在达到长度要求时保存。
+
+#### 排列：每层重新枚举，路径内排除已用位置
+
+```python
+def permutations(nums):
+    result, path = [], []
+    used = [False] * len(nums)
+    def dfs():
+        if len(path) == len(nums):
+            result.append(path[:])
+            return
+        for i in range(len(nums)):
+            if used[i]:
+                continue
+            used[i] = True
+            path.append(nums[i])
+            dfs()
+            path.pop()
+            used[i] = False
+    dfs()
+    return result
+```
+
+此版本用于元素互不相同的输入。若有重复值且答案要求去重，可先排序，再在循环中增加条件：i > 0 and nums[i] == nums[i - 1] and not used[i - 1] 时跳过。该条件约束相等元素的选择顺序，不阻止在同一排列中使用多个相等元素。
+
+#### 目标和组合：复用规则、剪枝与同层去重
+
+下面统一处理“允许复用”和“每个位置最多使用一次”两类问题。候选数必须为正整数，target 为非负整数。
+
+```python
+def target_combinations(candidates, target, reuse=False):
+    nums = sorted(candidates)
+    result, path = [], []
+    def dfs(start, remaining):
+        if remaining == 0:
+            result.append(path[:])
+            return
+        for i in range(start, len(nums)):
+            if nums[i] > remaining:
+                break
+            if i > start and nums[i] == nums[i - 1]:
+                continue
+            path.append(nums[i])
+            dfs(i if reuse else i + 1, remaining - nums[i])
+            path.pop()
+    dfs(0, target)
+    return result
+```
+
+reuse=True 时当前值可以再次选择；reuse=False 时下一层越过当前位置。排序后的同层去重避免等值分支重复；break 则排除当前层及其后所有过大的候选。
+
+#### 字符串分割：枚举当前片段的终点
+
+valid(piece) 判断一个片段能否被接受，例如回文判断。该模板要求最终覆盖整个字符串。
+
+```python
+def split_string(s, valid):
+    result, path = [], []
+    def dfs(start):
+        if start == len(s):
+            result.append(path[:])
+            return
+        for end in range(start + 1, len(s) + 1):
+            piece = s[start:end]
+            if not valid(piece):
+                continue
+            path.append(piece)
+            dfs(end)
+            path.pop()
+    dfs(0)
+    return result
+
+
+def palindrome_partitions(s):
+    return split_string(s, lambda piece: piece == piece[::-1])
+```
+
+这里 end 是右开端点，与正文中包含末字符的下标写法不同。切片使用 s[start:end]，下一段也从 end 开始，两处必须保持一致。
+
+#### 网格路径回溯：占用、探索、恢复
+
+下面以匹配字符序列为例，单元格值不修改，通过 used 保存当前路径访问状态。输入为矩形字符网格。
+
+```python
+def word_path_exists(board, word):
+    if not word:
+        return True
+    if not board or not board[0]:
+        return False
+    rows, cols = len(board), len(board[0])
+    used = set()
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    def dfs(r, c, index):
+        if not (0 <= r < rows and 0 <= c < cols):
+            return False
+        if (r, c) in used or board[r][c] != word[index]:
+            return False
+        if index == len(word) - 1:
+            return True
+        used.add((r, c))
+        found = any(dfs(r + dr, c + dc, index + 1)
+                    for dr, dc in directions)
+        used.remove((r, c))
+        return found
+    return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
+```
+
+any 在发现成功分支时停止继续枚举，但当前调用仍会执行 remove 后再返回。因此成功和失败的分支都能正确恢复路径状态。
 
 
 ---
 
 ## 图论搜索
 
-### 一、从回溯走到网格 DFS 和 BFS
+### 一、网格图建模与搜索方法
 
 网格可以看成图：每个合法格子是一个节点，相邻且允许移动的格子之间有边。方向数组描述有哪些边。
 
@@ -2286,7 +2661,7 @@ r + dr 是下一行，c + dc 是下一列。先检查边界，再访问数组。
 
 **同样是 DFS，是否撤销取决于访问状态的含义。** 单词搜索换一条路径后允许重用格子；岛屿计数中已经归属某座岛的格子不能再次计数。
 
-下面 200、130 使用显式栈，保持 DFS 思路并避免 Python 深递归可能超出递归深度限制；与作者递归版的连通块标记逻辑相同。200、994、1091 的实现会修改输入网格，需要保留原数据时，先用 [row[:] for row in grid] 复制。
+下面 200、130 使用显式栈，保持 DFS 思路并避免 Python 深递归可能超出递归深度限制；与作者递归版的连通块标记逻辑相同。200、994、1091 的实现会修改输入网格，需要保留原数据时，先用 `[row[:] for row in grid]` 复制。
 
 ### 二、200. 岛屿数量：发现一次新陆地，处理整块陆地
 
@@ -2387,7 +2762,7 @@ X O X X       X O X X
 
 所有初始腐烂橘子在第 0 分钟就开始传播。先把它们全部加入队列，才能模拟“同时开始”；不能把一个源头传播完，再让另一个开始。
 
-每轮开始记录 size = len(queue)，只处理这些格子。过程中新增的腐烂橘子属于下一轮，不能在同一分钟继续无限传播。
+每轮开始记录 `size = len(queue)`，只处理这些格子。过程中新增的腐烂橘子属于下一轮，不能在同一分钟继续无限传播。
 
 ```python
 from collections import deque
@@ -2432,7 +2807,7 @@ class Solution:
 - 有新鲜橘子，但没有腐烂源头：队列为空，返回 -1。
 - 搜索结束仍有新鲜橘子：被空格隔开等原因造成不可达，返回 -1。
 
-新鲜橘子入队时立即改成 2 并减少 fresh，否则可能被多个邻居重复计数。while queue and fresh > 0 避免全部腐烂后再额外算一轮。时间和最坏辅助空间均为 O(rows × cols)。
+新鲜橘子入队时立即改成 2 并减少 `fresh`，否则可能被多个邻居重复计数。`while queue and fresh > 0` 避免全部腐烂后再额外算一轮。时间和最坏辅助空间均为 O(rows × cols)。
 
 ### 五、1091. 二进制矩阵中的最短路径：BFS 第一次到达就是最短
 
@@ -2486,19 +2861,19 @@ class Solution:
         return -1
 ```
 
-#### 逐行看核心状态
+#### 队列状态与关键实现
 
-queue = deque([(0, 0, 1)])：保存“行、列、到达这里经过的格子数”。起点已经算一个格子，所以初始距离为 1。
+`queue = deque([(0, 0, 1)])`：保存“行、列、到达这里经过的格子数”。起点已经算一个格子，所以初始距离为 1。
 
-grid[0][0] = 1：先标记起点，防止从邻居走回起点。这里原始障碍和访问过的格子都不能再次进入，因此可以共用 1。
+`grid[0][0] = 1`：先标记起点，防止从邻居走回起点。这里原始障碍和访问过的格子都不能再次进入，因此可以共用 1。
 
-popleft()：从最早加入的节点开始处理，保证距离顺序。不能换成 pop()，否则变成后进先出的深度优先搜索。
+`popleft()`：从最早加入的节点开始处理，保证距离顺序。不能换成 `pop()`，否则变成后进先出的深度优先搜索。
 
-grid[nr][nc] = 1 放在入队之前：第一次发现就登记，避免一个格子被不同父节点重复入队。
+`grid[nr][nc] = 1` 放在入队之前：第一次发现就登记，避免一个格子被不同父节点重复入队。
 
-return -1 放在循环结束后：当前格子没有路不等于整张图没路，队列里的其他分支可能到达终点。
+`return -1` 放在循环结束后：当前格子没有路不等于整张图没路，队列里的其他分支可能到达终点。
 
-#### 手推一次队列
+#### 队列变化示例
 
 ```text
 grid = [[0, 0, 0],
@@ -2514,7 +2889,7 @@ grid = [[0, 0, 0],
 
 一条最短路线是 (0, 0) → (0, 1) → (1, 2) → (2, 2)。移动了三次，但经过四个格子，所以答案为 4。
 
-#### 最容易混淆的边界
+#### 边界情况
 
 | 输入或情况 | 答案/处理 | 原因 |
 | --- | --- | --- |
@@ -2524,18 +2899,24 @@ grid = [[0, 0, 0],
 | 终点为 1 | -1 | 无法进入终点 |
 | 起终点为 0，但中间不连通 | -1 | 等队列耗尽后确定 |
 
-每格最多入队一次，每格最多检查八个邻居，因此时间 O(n²)，最坏队列空间 O(n²)。本实现已把距离保存在队列里，不需要再用 size 分层计数；994 使用按层计时，两种写法选择一种即可。
+每格最多入队一次，每格最多检查八个邻居，因此时间 O(n²)，最坏队列空间 O(n²)。本实现已把距离保存在队列里，不需要再用 `size` 分层计数；994 使用按层计时，两种写法选择一种即可。
 
-### 六、图论搜索复习套路与自测
+### 六、网格搜索的通用套路与题型对比
 
-#### 网格搜索写代码前的六个问题
+#### 网格搜索的六个组成部分
 
-1. **状态是什么？** 只需要坐标，还是还包含钥匙、剩余次数等信息？如果额外状态影响后续选择，仅用坐标判重可能漏解。
-2. **从哪里开始？** 所有未访问陆地、全部边界、所有腐烂源头，还是左上角？
-3. **向哪里走？** 四方向还是八方向？
-4. **哪些格子合法？** 值为 0、值为 1，还是字母匹配？
-5. **访问标记是否恢复？** 枚举路径通常恢复，连通性和本节 BFS 不恢复。
-6. **答案怎么计数？** 连通块数量、传播轮数、移动次数还是路径格子数？
+网格搜索可以统一拆分为状态定义、起点集合、移动规则、合法性检查、访问标记和答案统计。不同题目的代码结构相近，但这六部分的含义并不相同。
+
+| 组成部分 | 设计依据 | 典型差异 |
+| --- | --- | --- |
+| 状态定义 | 状态必须包含决定后续选择的全部信息 | 普通连通性只需坐标；单词搜索还需要匹配下标 |
+| 起点集合 | 根据题目确定搜索从哪些节点开始 | 单起点、多源起点、边界起点、逐个枚举起点 |
+| 移动规则 | 按题意定义相邻节点 | 四方向与八方向不能混用 |
+| 合法性检查 | 排除越界、障碍和不符合条件的节点 | 先检查边界，再读取格子内容 |
+| 访问标记 | 明确标记属于当前路径还是整个搜索 | 路径占用需要恢复，连通块归属不恢复 |
+| 答案统计 | 按题目要求定义计数单位 | 连通块数、传播轮数、移动次数、经过的格子数 |
+
+如果钥匙、剩余消除障碍次数等信息会改变后续可达位置，那么相同坐标不一定代表相同状态。此时访问记录也必须包含这些额外信息，仅按坐标判重可能漏掉合法路径。
 
 | 题目 | 起点 | 方向 | 搜索目标 | 标记方式 |
 | --- | --- | --- | --- | --- |
@@ -2549,14 +2930,176 @@ grid = [[0, 0, 0],
 
 前提是每条边代价相同。本节上下、左右、斜向都只算一次移动。如果不同格子的通行费用不同，不能直接套用“第一次发现就是最优”的普通 BFS，需要重新选择算法。
 
-#### 遮住代码，尝试自己回答
+#### 访问标记的作用范围
 
-- 为什么 46 每层从 0 开始，而 77 从 start_index 开始？因为排列允许把前面的元素放到后面，但同一路径不能重复使用。
-- 为什么 39 传 i，40 传 i + 1？因为前者允许重复使用同一位置，后者不允许。
-- 为什么 40 的去重判断是 i > start_index？只跳过同层的重复选择，不阻止同一路径选多个相同值。
-- 为什么 79 要恢复标记，200 不恢复？前者的占用只属于当前路径，后者的访问代表已完成连通块归属。
-- 为什么 994 要让所有源点同时入队？它们同时在第 0 分钟开始传播。
-- 为什么 1091 的距离从 1 开始？答案计算格子数，包含起点。
-- 为什么 BFS 入队时就标记？第一次发现的距离已最短，且能避免同一节点重复入队。
+访问标记分为路径内标记和全局标记。单词搜索中的标记表示“当前路径已经使用这个格子”，离开分支后必须恢复；岛屿搜索中的标记表示“这个格子已经属于某个被处理的连通块”，整个搜索期间都应保留。
 
-复习时先按表格判断“选择范围、访问状态、答案含义”，再默写代码。能解释这些差别，比背一个不加区分的 DFS/BFS 模板更有用。
+在等权最短路径 BFS 中，队列按距离非递减顺序处理节点。首次发现某个状态时，其最短距离已经确定，因此可以在入队时标记，防止同一状态被不同父节点重复加入队列。
+
+#### 分层计数与显式距离
+
+BFS 常见的距离记录方式有两种：按层处理时统一增加计数，或将距离直接保存在队列元素中。
+
+腐烂的橘子使用前一种方式，每轮固定处理当前队列中的节点，将新增节点留到下一分钟。最短路径使用后一种方式，队列保存坐标与距离，邻居距离由当前距离加一得到。两种写法都依赖先进先出的顺序，区别在于距离存储的位置。
+
+计数起点需要与题意一致：传播开始时经过的时间是 0；从起点出发的移动次数是 0；若计算路径包含的格子数，起点本身就贡献 1。
+
+#### 从题目要求到搜索方案
+
+连通块问题关注哪些节点属于同一区域，DFS 与 BFS 都可完成标记；边界保护问题通过反向搜索找出必须保留的区域；同时扩散问题将所有源点作为第 0 层；等权最短路径问题利用 BFS 的分层顺序确定最短距离。
+
+这些题目的共同流程是：确定起点，标记已发现状态，按照移动规则扩展合法邻居，再根据题目要求统计答案。具体实现中的方向数量、标记时机与计数含义，需要与这一流程保持一致。
+
+### 七、图与网格搜索模板
+
+#### 网格邻居生成：方向、边界与通行条件分离
+
+```python
+FOUR_DIRECTIONS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+EIGHT_DIRECTIONS = [
+    (-1, -1), (-1, 0), (-1, 1),
+    (0, -1),           (0, 1),
+    (1, -1),  (1, 0),  (1, 1),
+]
+
+
+def grid_neighbors(r, c, rows, cols, directions):
+    for dr, dc in directions:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < rows and 0 <= nc < cols:
+            yield nr, nc
+```
+
+该函数只处理方向和边界，障碍判断由调用方完成。下面的连通块、边界保护和二进制矩阵模板复用本节辅助函数与方向数组。
+
+#### 连通块计数：外层找起点，内层标完整块
+
+is_land(value) 判断格子是否属于待统计区域，例如字符串网格中可传 lambda value: value == '1'。
+
+```python
+def count_components(grid, is_land):
+    if not grid or not grid[0]:
+        return 0
+    rows, cols = len(grid), len(grid[0])
+    seen = set()
+    count = 0
+    for r in range(rows):
+        for c in range(cols):
+            if (r, c) in seen or not is_land(grid[r][c]):
+                continue
+            count += 1
+            seen.add((r, c))
+            stack = [(r, c)]
+            while stack:
+                x, y = stack.pop()
+                for nx, ny in grid_neighbors(x, y, rows, cols, FOUR_DIRECTIONS):
+                    if (nx, ny) not in seen and is_land(grid[nx][ny]):
+                        seen.add((nx, ny))
+                        stack.append((nx, ny))
+    return count
+```
+
+使用 seen 不会修改输入网格，代价是额外访问集合。若改用原地标记，应在入栈时修改，且标记值必须与未访问区域区分开。
+
+#### 边界反向搜索：求出所有与外部连通的区域
+
+```python
+def boundary_connected_cells(board, open_value='O'):
+    if not board or not board[0]:
+        return set()
+    rows, cols = len(board), len(board[0])
+    safe = set()
+    stack = []
+    def add(r, c):
+        if (r, c) not in safe and board[r][c] == open_value:
+            safe.add((r, c))
+            stack.append((r, c))
+    for r in range(rows):
+        add(r, 0)
+        add(r, cols - 1)
+    for c in range(cols):
+        add(0, c)
+        add(rows - 1, c)
+    while stack:
+        r, c = stack.pop()
+        for nr, nc in grid_neighbors(r, c, rows, cols, FOUR_DIRECTIONS):
+            add(nr, nc)
+    return safe
+```
+
+被围绕区域中，所有值为 O 且不在 safe 中的格子需要翻转。边界搜索只负责求可达集合，最终翻转、计数或保留由题目决定。
+
+#### 多源 BFS：一次求出到最近源点的距离
+
+sources 是初始源点集合；neighbors(state) 返回合法后继状态；状态必须可哈希。以下模板用于每条边代价均为 1 的图。
+
+```python
+from collections import deque
+
+
+def bfs_distances(sources, neighbors):
+    distance = {}
+    queue = deque()
+    for source in sources:
+        if source not in distance:
+            distance[source] = 0
+            queue.append(source)
+    while queue:
+        state = queue.popleft()
+        for nxt in neighbors(state):
+            if nxt in distance:
+                continue
+            distance[nxt] = distance[state] + 1
+            queue.append(nxt)
+    return distance
+```
+
+所有源点距离均为 0。distance 同时承担距离记录和访问标记，入队前写入，避免重复入队。普通单源搜索只需传入一个元素的源点列表。
+
+腐烂橘子可把初始腐烂位置作为 sources，邻居仅允许非空橘子格。若某个初始新鲜橘子不在 distance 中，答案为 -1；否则答案是所有初始新鲜橘子的最大距离，没有新鲜橘子时为 0。
+
+#### 单源 BFS：首次到达目标时结束
+
+```python
+from collections import deque
+
+
+def shortest_steps(start, is_goal, neighbors):
+    queue = deque([(start, 0)])
+    seen = {start}
+    while queue:
+        state, steps = queue.popleft()
+        if is_goal(state):
+            return steps
+        for nxt in neighbors(state):
+            if nxt not in seen:
+                seen.add(nxt)
+                queue.append((nxt, steps + 1))
+    return -1
+```
+
+该模板返回边数，即移动次数。调用方需要先验证起点合法，并保证 neighbors 只产生合法状态。若题目统计路径节点数，成功结果加一；失败的 -1 不应加一。
+
+#### 二进制矩阵：将网格规则接入 BFS
+
+```python
+def binary_matrix_path_length(grid):
+    if not grid or not grid[0]:
+        return -1
+    rows, cols = len(grid), len(grid[0])
+    target = (rows - 1, cols - 1)
+    if grid[0][0] != 0 or grid[target[0]][target[1]] != 0:
+        return -1
+    def neighbors(state):
+        r, c = state
+        for nr, nc in grid_neighbors(r, c, rows, cols, EIGHT_DIRECTIONS):
+            if grid[nr][nc] == 0:
+                yield nr, nc
+    steps = shortest_steps((0, 0), lambda state: state == target, neighbors)
+    return -1 if steps == -1 else steps + 1
+```
+
+这个版本不修改输入矩阵，复用邻居生成与最短步数模板。它允许八方向移动；四方向迷宫只需替换方向数组，其他距离逻辑保持不变。
+
+图搜索的空间与时间取决于状态数和边数。DFS/BFS 通常为 O(V + E) 时间、O(V) 辅助空间；固定方向网格每格邻居数为常数，因此时间可写为 O(rows × cols)。如果状态还包含钥匙或剩余次数，V 应计算完整状态的数量，而不只是格子数量。
+
